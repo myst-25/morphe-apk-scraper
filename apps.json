@@ -3,154 +3,220 @@
     "name": "YouTube",
     "package": "com.google.android.youtube",
     "version": "20.47.62",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/google-inc/youtube/youtube-20-47-62-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://youtube.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/youtube/com.google.android.youtube",
+    "apkcombo_url": "https://apkcombo.com/apk/com.google.android.youtube"
   },
   {
     "name": "YouTube Music",
     "package": "com.google.android.apps.youtube.music",
     "version": "8.47.56",
+    "arch": "arm64-v8a",
     "apkmirror_url": "https://www.apkmirror.com/apk/google-inc/youtube-music/youtube-music-8-47-56-release/",
-    "arch": "arm64-v8a"
+    "uptodown_dlurl": "https://youtube-music.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/youtube-music/com.google.android.apps.youtube.music",
+    "apkcombo_url": "https://apkcombo.com/apk/com.google.android.apps.youtube.music"
   },
   {
     "name": "Reddit",
     "package": "com.reddit.frontpage",
     "version": "2026.10.0",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/redditinc/reddit/reddit-2026-10-0-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://reddit-official-app.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/reddit/com.reddit.frontpage",
+    "apkcombo_url": "https://apkcombo.com/apk/com.reddit.frontpage"
   },
   {
     "name": "Amazon Prime Video",
     "package": "com.amazon.avod.thirdpartyclient",
     "version": "3.0.447.757",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/amazon-mobile-llc/amazon-prime-video/amazon-prime-video-3-0-447-757-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://amazon-prime-video.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/amazon-prime-video/com.amazon.avod.thirdpartyclient",
+    "apkcombo_url": "https://apkcombo.com/apk/com.amazon.avod.thirdpartyclient"
   },
   {
     "name": "Duolingo",
     "package": "com.duolingo",
     "version": "6.74.4",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/duolingo/duolingo-duolingo/duolingo-duolingo-6-74-4-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://duolingo.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/duolingo/com.duolingo",
+    "apkcombo_url": "https://apkcombo.com/apk/com.duolingo"
   },
   {
     "name": "Proton VPN",
     "package": "ch.protonvpn.android",
     "version": "5.16.83.0",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/proton-technologies-ag/proton-vpn-fast-secure/proton-vpn-fast-secure-5-16-83-0-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://proton-vpn.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/proton-vpn/ch.protonvpn.android",
+    "apkcombo_url": "https://apkcombo.com/apk/ch.protonvpn.android"
   },
   {
     "name": "SoundCloud",
     "package": "com.soundcloud.android",
     "version": "2026.03.20-release",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/soundcloud/soundcloud-play-music-songs/soundcloud-play-music-songs-2026-03-20-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://soundcloud.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/soundcloud/com.soundcloud.android",
+    "apkcombo_url": "https://apkcombo.com/apk/com.soundcloud.android"
   },
   {
     "name": "Pandora",
     "package": "com.pandora.android",
     "version": null,
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/pandora/pandora-radio-music-podcasts/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://pandora.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/pandora/com.pandora.android",
+    "apkcombo_url": "https://apkcombo.com/apk/com.pandora.android"
   },
   {
     "name": "WPS Office",
     "package": "cn.wps.moffice_eng",
     "version": "18.24",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/kingsoft-office-software-corporation-limited/wps-office-free-office-suite-for-word-pdf-excel/wps-office-free-office-suite-for-word-pdf-excel-18-24-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://wps-office.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/wps-office/cn.wps.moffice_eng",
+    "apkcombo_url": "https://apkcombo.com/apk/cn.wps.moffice_eng"
   },
   {
     "name": "MyFitnessPal",
     "package": "com.myfitnesspal.android",
     "version": "25.50.0",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/under-armour/myfitnesspal/myfitnesspal-25-50-0-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://myfitnesspal.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/myfitnesspal/com.myfitnesspal.android",
+    "apkcombo_url": "https://apkcombo.com/apk/com.myfitnesspal.android"
   },
   {
     "name": "AdGuard",
     "package": "com.adguard.android",
     "version": "4.12.81",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/adguard-software-limited/adguard-ad-blocker/adguard-ad-blocker-4-12-81-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://adguard-content-blocker.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/adguard/com.adguard.android",
+    "apkcombo_url": "https://apkcombo.com/apk/com.adguard.android"
   },
   {
     "name": "SofaScore",
     "package": "com.sofascore.results",
     "version": "25.12.17",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/sofascore/sofascore-sports-scores/sofascore-sports-scores-25-12-17-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://sofascore.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/sofascore/com.sofascore.results",
+    "apkcombo_url": "https://apkcombo.com/apk/com.sofascore.results"
   },
   {
     "name": "Nova Launcher",
     "package": "com.teslacoilsw.launcher",
     "version": "81042",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/teslacoil-software/nova-launcher/nova-launcher-8-5-1-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://nova-launcher.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/nova-launcher/com.teslacoilsw.launcher",
+    "apkcombo_url": "https://apkcombo.com/apk/com.teslacoilsw.launcher"
   },
   {
     "name": "Podcast Addict",
     "package": "com.bambuna.podcastaddict",
     "version": "2026.4",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/xavier-michiels/podcast-addict/podcast-addict-2026-4-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://podcast-addict.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/podcast-addict/com.bambuna.podcastaddict",
+    "apkcombo_url": "https://apkcombo.com/apk/com.bambuna.podcastaddict"
   },
   {
     "name": "Xodo PDF",
     "package": "com.xodo.pdf.reader",
     "version": "10.13.0",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/xodo-technologies-inc/xodo-pdf-reader-editor/xodo-pdf-reader-editor-10-13-0-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://xodo-pdf-reader-editor.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/xodo-pdf/com.xodo.pdf.reader",
+    "apkcombo_url": "https://apkcombo.com/apk/com.xodo.pdf.reader"
   },
   {
     "name": "Solid Explorer",
     "package": "pl.solidexplorer2",
     "version": "3.4.1",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/neatbytes/solid-explorer-file-manager/solid-explorer-file-manager-3-4-1-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://solid-explorer.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/solid-explorer/pl.solidexplorer2",
+    "apkcombo_url": "https://apkcombo.com/apk/pl.solidexplorer2"
   },
   {
     "name": "ibis Paint X",
     "package": "jp.ne.ibis.ibispaintx.app",
     "version": "14.0.0",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/ibis-inc/ibis-paint-x/ibis-paint-x-14-0-0-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://ibis-paint-x.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/ibis-paint-x/jp.ne.ibis.ibispaintx.app",
+    "apkcombo_url": "https://apkcombo.com/apk/jp.ne.ibis.ibispaintx.app"
   },
   {
     "name": "Windy",
     "package": "com.windyty.android",
     "version": "49.0.1",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/windyty-se/windy-wind-weather-forecast/windy-wind-weather-forecast-49-0-1-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://windy.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/windy/com.windyty.android",
+    "apkcombo_url": "https://apkcombo.com/apk/com.windyty.android"
   },
   {
     "name": "Merriam-Webster",
     "package": "com.merriamwebster",
     "version": null,
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/merriam-webster-inc/merriam-webster-dictionary/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://merriam-webster.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/merriam-webster/com.merriamwebster",
+    "apkcombo_url": "https://apkcombo.com/apk/com.merriamwebster"
   },
   {
     "name": "Mimo",
     "package": "com.getmimo",
     "version": "9.0",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/mimo-learn-coding-programming/mimo-learn-coding-programming/mimo-learn-coding-programming-9-0-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://mimo.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/mimo/com.getmimo",
+    "apkcombo_url": "https://apkcombo.com/apk/com.getmimo"
   },
   {
     "name": "Wallpaper Craft",
     "package": "com.wallpaperscraft.wallpaper",
     "version": "3.61.01",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/wallpaperscraft/wallpaper-engine-live-wallpaper/wallpaper-engine-live-wallpaper-3-61-01-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://wallpaperscraft.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/wallpaperscraft/com.wallpaperscraft.wallpaper",
+    "apkcombo_url": "https://apkcombo.com/apk/com.wallpaperscraft.wallpaper"
   },
   {
     "name": "FotMob",
     "package": "com.mobilefootie.wc2010",
     "version": "226.16092.20260302",
+    "arch": "nodpi",
     "apkmirror_url": "https://www.apkmirror.com/apk/fotmob-as/fotmob-live-soccer-scores/fotmob-live-soccer-scores-226-16092-20260302-release/",
-    "arch": "nodpi"
+    "uptodown_dlurl": "https://fotmob.en.uptodown.com/android",
+    "apkpure_url": "https://apkpure.net/fotmob/com.mobilefootie.wc2010",
+    "apkcombo_url": "https://apkcombo.com/apk/com.mobilefootie.wc2010"
   }
 ]
