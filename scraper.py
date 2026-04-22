@@ -10,17 +10,17 @@ import os
 import re
 import sys
 import time
-import subprocess
 from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Referer": "https://www.apkmirror.com/",
 }
 
 APKMIRROR_BASE = "https://www.apkmirror.com"
@@ -36,193 +36,346 @@ def load_apps():
         return json.load(f)
 
 
-def get_soup(url, retries=3):
+def get_soup(url, retries=3, delay=4):
     for attempt in range(retries):
         try:
             resp = requests.get(url, headers=HEADERS, timeout=30)
+            if resp.status_code == 429:
+                wait = int(resp.headers.get("Retry-After", 30))
+                print(f"  [!] Rate limited, waiting {wait}s...")
+                time.sleep(wait)
+                continue
             resp.raise_for_status()
             return BeautifulSoup(resp.text, "html.parser")
         except Exception as e:
             print(f"  [!] Attempt {attempt+1} failed for {url}: {e}")
-            time.sleep(5 * (attempt + 1))
+            time.sleep(delay * (attempt + 1))
     return None
 
 
-def find_latest_version_url(base_url):
-    """When no version is pinned, find the latest APK page URL from listing."""
+def version_to_url_slug(version):
+    """Convert version string like '20.47.62' -> '20-47-62'"""
+    return re.sub(r"[^a-zA-Z0-9]+", "-", version).strip("-").lower()
+
+
+def find_release_page(base_url, version):
+    """
+    Given the APKMirror listing URL and a version string,
+    find the correct release page URL.
+    Strategy:
+      1. Load listing page and search for a link containing the version slug.
+      2. Fallback: construct URL from base_url + version slug pattern.
+    """
     soup = get_soup(base_url)
     if not soup:
         return None
-    link = soup.select_one(".appRowVariantTag~ .appRowVariantTag+ .table-cell a")
-    if not link:
-        # fallback: grab first release link
-        link = soup.select_one('a[href*="-release/"]')
-    if link:
-        return APKMIRROR_BASE + link["href"]
+
+    ver_slug = version_to_url_slug(version)
+    # Search all links on the page for one matching the version
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        if ver_slug in href and "/apk/" in href and href.endswith("/"):
+            # Make sure it's a release page (not download page)
+            if "download" not in href:
+                full = href if href.startswith("http") else APKMIRROR_BASE + href
+                print(f"  [~] Found release page via listing: {full}")
+                return full
+
+    # Fallback: try to construct the URL directly
+    # APKMirror pattern: {base_url}{app-slug}-{version-slug}-release/
+    # Extract app slug from base_url
+    base_clean = base_url.rstrip("/")
+    app_slug = base_clean.split("/")[-1]
+    constructed = f"{base_clean}/{app_slug}-{ver_slug}-release/"
+    print(f"  [~] Trying constructed URL: {constructed}")
+    resp = requests.get(constructed, headers=HEADERS, timeout=20)
+    if resp.status_code == 200 and "apkmirror" in resp.url:
+        return constructed
+
+    print(f"  [!] Could not find release page for version {version}")
     return None
 
 
-def find_apk_download_page(release_url, arch):
-    """From a release page, find the direct APK variant download page link."""
+def find_latest_release_page(base_url):
+    """When no version is pinned, get the first/latest release page URL."""
+    soup = get_soup(base_url)
+    if not soup:
+        return None
+    # APKMirror listing: release rows have class 'appRow'
+    for a in soup.select(".appRow a[href]"):
+        href = a["href"]
+        if "-release/" in href and "download" not in href:
+            full = href if href.startswith("http") else APKMIRROR_BASE + href
+            return full
+    # Fallback: any link with -release/
+    a = soup.find("a", href=re.compile(r"-release/$"))
+    if a:
+        href = a["href"]
+        return href if href.startswith("http") else APKMIRROR_BASE + href
+    return None
+
+
+def find_apk_variant_page(release_url, arch):
+    """
+    From a release page (e.g. /apk/google-inc/youtube/youtube-20-47-62-release/),
+    find the individual APK variant download info page.
+    APKMirror shows a table of variants; we pick APK (not APKM/bundle), matching arch.
+    """
     soup = get_soup(release_url)
     if not soup:
         return None
 
-    # Look for APK (not APKM/XAPK) download links
-    for row in soup.select(".table-cell.rowheight"):
-        text = row.get_text()
-        # Prefer matching arch or nodpi / universal
-        if arch and arch != "nodpi":
-            if arch not in text and "universal" not in text.lower():
-                continue
-        # Skip bundles
-        if "BUNDLE" in text.upper() or "APKS" in text.upper():
-            continue
-        link = row.find("a", href=re.compile(r"/apk/.+download/"))
-        if link:
-            return APKMIRROR_BASE + link["href"]
+    # The variants table rows — each has a link to the variant info page
+    # Real APKMirror selector: div.table-cell > span contains arch info,
+    # and the row has a link to /apk/.../download-variant/
+    rows = soup.select("div.variants-table .table-row")
+    if not rows:
+        # fallback selector used on some pages
+        rows = soup.select(".apkm-badge")
 
-    # Fallback: find any APK download variant link on page
-    link = soup.find("a", href=re.compile(r"/apk/.+download/"), string=re.compile(r"APK", re.I))
-    if link:
-        return APKMIRROR_BASE + link["href"]
+    # Strategy: collect all APK (non-bundle) variant links
+    candidates = []
+    for a in soup.find_all("a", href=re.compile(r"/apk/.+/\d+/$")):
+        href = a["href"]
+        # Get surrounding text to check arch and type
+        parent_text = a.find_parent().get_text(" ", strip=True) if a.find_parent() else ""
+        # Skip APKM bundles
+        if "BUNDLE" in parent_text.upper() or "APKM" in parent_text.upper():
+            continue
+        candidates.append((href, parent_text))
+
+    if not candidates:
+        # Try broader: any link ending with digit/
+        for a in soup.find_all("a", href=re.compile(r"/apk/")):
+            href = a["href"]
+            if re.search(r"/\d+/$", href):
+                parent_text = a.find_parent().get_text(" ", strip=True) if a.find_parent() else ""
+                if "BUNDLE" not in parent_text.upper():
+                    candidates.append((href, parent_text))
+
+    if not candidates:
+        print(f"  [!] No variant links found on {release_url}")
+        return None
+
+    # Prefer arch match, then nodpi/universal, then first
+    def score(item):
+        href, text = item
+        t = text.lower()
+        if arch and arch != "nodpi" and arch.lower() in t:
+            return 0
+        if "nodpi" in t or "universal" in t or "all" in t:
+            return 1
+        return 2
+
+    candidates.sort(key=score)
+    best_href = candidates[0][0]
+    full = best_href if best_href.startswith("http") else APKMIRROR_BASE + best_href
+    print(f"  [~] Variant page: {full}")
+    return full
+
+
+def get_download_page_url(variant_page_url):
+    """
+    From a variant info page (/apk/.../{id}/),
+    find the 'Download APK' button link which leads to the interstitial download page.
+    """
+    soup = get_soup(variant_page_url)
+    if not soup:
+        return None
+
+    # APKMirror: the green download button links to a page like
+    # /apk/.../download/?key=...
+    btn = soup.find("a", href=re.compile(r"download/\?key="))
+    if btn:
+        href = btn["href"]
+        full = href if href.startswith("http") else APKMIRROR_BASE + href
+        print(f"  [~] Interstitial page: {full}")
+        return full
+
+    # Fallback: look for any download link
+    btn = soup.find("a", string=re.compile(r"download", re.I), href=re.compile(r"download"))
+    if btn:
+        href = btn["href"]
+        full = href if href.startswith("http") else APKMIRROR_BASE + href
+        return full
+
+    print(f"  [!] No download button found on {variant_page_url}")
     return None
 
 
-def get_final_download_url(download_page_url):
-    """From APKMirror download page, extract the final direct download URL."""
-    soup = get_soup(download_page_url)
+def get_final_apk_url(interstitial_url):
+    """
+    APKMirror interstitial page has a 'Click here to download' link
+    that is the actual APK file URL (via their CDN/redirect).
+    The real link is in: a[rel='nofollow'] or href containing 'cdn.apkmirror.com'
+    """
+    soup = get_soup(interstitial_url)
     if not soup:
         return None
-    # The actual download button
-    btn = soup.select_one("a[href*='?key=']") or soup.select_one(".downloadButton a") or \
-          soup.find("a", href=re.compile(r"download\.php\?key="))
-    if btn:
-        href = btn.get("href", "")
-        if href.startswith("/"):
-            return APKMIRROR_BASE + href
-        return href
+
+    # Direct CDN link
+    a = soup.find("a", href=re.compile(r"cdn\.apkmirror\.com"))
+    if a:
+        return a["href"]
+
+    # Fallback: nofollow download link
+    a = soup.find("a", rel="nofollow", href=re.compile(r"\.apk"))
+    if a:
+        href = a["href"]
+        return href if href.startswith("http") else APKMIRROR_BASE + href
+
+    # Last resort: any .apk link
+    a = soup.find("a", href=re.compile(r"\.apk"))
+    if a:
+        href = a["href"]
+        return href if href.startswith("http") else APKMIRROR_BASE + href
+
+    # Try extracting from onclick / data attrs
+    for tag in soup.find_all(attrs={"data-google-interstitial": True}):
+        href = tag.get("href", "")
+        if href:
+            return href if href.startswith("http") else APKMIRROR_BASE + href
+
+    print(f"  [!] Could not find final APK URL on {interstitial_url}")
     return None
 
 
 def download_apk(url, dest_path, retries=3):
-    """Download APK from APKMirror with retry."""
+    """Download APK with retry and size validation."""
     for attempt in range(retries):
         try:
-            with requests.get(url, headers=HEADERS, stream=True, timeout=120) as r:
+            with requests.get(url, headers=HEADERS, stream=True,
+                              timeout=180, allow_redirects=True) as r:
                 r.raise_for_status()
+                content_type = r.headers.get("Content-Type", "")
+                if "text/html" in content_type:
+                    print(f"  [!] Got HTML instead of APK (blocked/captcha?)")
+                    return False
                 with open(dest_path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
+                    for chunk in r.iter_content(chunk_size=65536):
                         f.write(chunk)
             size = dest_path.stat().st_size
-            if size < 100_000:  # suspiciously small = likely error page
-                print(f"  [!] Downloaded file too small ({size} bytes), may be error page")
+            if size < 500_000:
+                print(f"  [!] File too small ({size} bytes), likely not a valid APK")
                 dest_path.unlink(missing_ok=True)
                 return False
             print(f"  [+] Downloaded {dest_path.name} ({size // 1024 // 1024} MB)")
             return True
         except Exception as e:
             print(f"  [!] Download attempt {attempt+1} failed: {e}")
-            time.sleep(5 * (attempt + 1))
+            time.sleep(8 * (attempt + 1))
     return False
 
 
 def get_or_create_release():
-    """Get existing 'apks' release or create it. Returns release id."""
-    api = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{RELEASE_TAG}"
-    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
-    r = requests.get(api, headers=headers)
+    api_base = f"https://api.github.com/repos/{GITHUB_REPO}"
+    gh_headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
+    r = requests.get(f"{api_base}/releases/tags/{RELEASE_TAG}", headers=gh_headers)
     if r.status_code == 200:
-        return r.json()["id"], r.json()["upload_url"]
-    # Create it
-    api = f"https://api.github.com/repos/{GITHUB_REPO}/releases"
+        data = r.json()
+        return data["id"], data["upload_url"]
+    # Create release + tag
     payload = {
         "tag_name": RELEASE_TAG,
         "name": "APK Mirror",
-        "body": "Auto-scraped APKs for Morphe patching",
+        "body": "Auto-scraped APKs for Morphe patching. Do not edit manually.",
         "prerelease": False
     }
-    r = requests.post(api, headers=headers, json=payload)
+    r = requests.post(f"{api_base}/releases", headers=gh_headers, json=payload)
     r.raise_for_status()
-    return r.json()["id"], r.json()["upload_url"]
+    data = r.json()
+    return data["id"], data["upload_url"]
 
 
 def list_release_assets(release_id):
-    """Returns dict of {filename: asset_id} already in the release."""
     api = f"https://api.github.com/repos/{GITHUB_REPO}/releases/{release_id}/assets"
-    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
-    r = requests.get(api, headers=headers)
+    gh_headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
+    r = requests.get(api, headers=gh_headers)
     r.raise_for_status()
     return {a["name"]: a["id"] for a in r.json()}
 
 
 def delete_asset(asset_id):
     api = f"https://api.github.com/repos/{GITHUB_REPO}/releases/assets/{asset_id}"
-    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
-    requests.delete(api, headers=headers)
+    gh_headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
+    requests.delete(api, headers=gh_headers)
 
 
 def upload_asset(upload_url, file_path):
-    """Upload APK file to GitHub release."""
-    upload_url = upload_url.split("{")[0]  # strip template part
-    headers = {
+    upload_url = re.sub(r"\{.*\}", "", upload_url)  # strip {?name,label} template
+    gh_headers = {
         "Authorization": f"Bearer {GITHUB_TOKEN}",
         "Content-Type": "application/vnd.android.package-archive",
+        "Accept": "application/vnd.github+json"
     }
-    params = {"name": file_path.name}
+    params = {"name": file_path.name, "label": file_path.name}
     with open(file_path, "rb") as f:
-        r = requests.post(upload_url, headers=headers, params=params, data=f, timeout=300)
+        r = requests.post(upload_url, headers=gh_headers,
+                          params=params, data=f, timeout=600)
     if r.status_code in (200, 201):
-        print(f"  [+] Uploaded {file_path.name} to GitHub release")
-        return r.json().get("browser_download_url", "")
-    else:
-        print(f"  [!] Upload failed ({r.status_code}): {r.text[:200]}")
-        return ""
+        url = r.json().get("browser_download_url", "")
+        print(f"  [+] Uploaded to release: {url}")
+        return url
+    print(f"  [!] Upload failed ({r.status_code}): {r.text[:300]}")
+    return ""
 
 
-def scrape_and_upload(app):
+def scrape_app(app):
     name = app["name"]
     package = app["package"]
     version = app.get("version")
-    base_url = app["apkmirror_url"]
+    base_url = app["apkmirror_url"].rstrip("/") + "/"
     arch = app.get("arch", "nodpi")
 
-    print(f"\n[>] {name} ({package}) version={version or 'latest'}")
+    print(f"\n[>] {name} | pkg={package} | ver={version or 'latest'} | arch={arch}")
 
-    # Determine release page URL
+    # Step 1: Find release page
     if version:
-        release_url = base_url
+        release_page = find_release_page(base_url, version)
     else:
-        print(f"  [~] No version pinned, finding latest...")
-        release_url = find_latest_version_url(base_url)
-        if not release_url:
-            print(f"  [!] Could not find latest version URL for {name}")
-            return None
-        print(f"  [~] Latest release page: {release_url}")
+        release_page = find_latest_release_page(base_url)
 
-    # Find APK variant download page
-    dl_page = find_apk_download_page(release_url, arch)
-    if not dl_page:
-        print(f"  [!] Could not find APK download page for {name}")
+    if not release_page:
+        print(f"  [FAIL] Could not find release page")
         return None
-    print(f"  [~] Download page: {dl_page}")
 
-    # Get final download URL
-    final_url = get_final_download_url(dl_page)
+    # Step 2: Find APK variant page
+    variant_page = find_apk_variant_page(release_page, arch)
+    if not variant_page:
+        print(f"  [FAIL] Could not find variant page")
+        return None
+
+    # Step 3: Get interstitial download page
+    interstitial = get_download_page_url(variant_page)
+    if not interstitial:
+        print(f"  [FAIL] Could not find download page")
+        return None
+
+    # Step 4: Get final APK CDN URL
+    final_url = get_final_apk_url(interstitial)
     if not final_url:
-        print(f"  [!] Could not extract final download URL for {name}")
+        print(f"  [FAIL] Could not get final APK URL")
         return None
-    print(f"  [~] Final URL: {final_url}")
+    print(f"  [~] Final APK URL: {final_url}")
 
-    # Download APK
-    safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
-    ver_tag = version.replace(" ", "_") if version else "latest"
+    # Step 5: Download
+    DOWNLOAD_DIR.mkdir(exist_ok=True)
+    ver_tag = (version or "latest").replace(" ", "_")
     filename = f"{package}-{ver_tag}.apk"
     dest = DOWNLOAD_DIR / filename
-    DOWNLOAD_DIR.mkdir(exist_ok=True)
 
     if not download_apk(final_url, dest):
-        print(f"  [!] Failed to download APK for {name}")
+        print(f"  [FAIL] Download failed")
         return None
 
     return dest
@@ -230,28 +383,29 @@ def scrape_and_upload(app):
 
 def main():
     if not GITHUB_TOKEN:
-        print("[!] GITHUB_TOKEN not set, cannot upload to releases")
+        print("[!] GITHUB_TOKEN not set")
         sys.exit(1)
 
     apps = load_apps()
-    print(f"[*] Loaded {len(apps)} apps from apps.json")
+    print(f"[*] Loaded {len(apps)} apps")
 
     release_id, upload_url = get_or_create_release()
-    print(f"[*] Using release id={release_id}")
-    existing_assets = list_release_assets(release_id)
-    print(f"[*] Existing assets: {list(existing_assets.keys())}")
+    print(f"[*] Release id={release_id}")
+    existing = list_release_assets(release_id)
+    print(f"[*] Existing assets: {len(existing)}")
 
     results = []
     for app in apps:
-        apk_path = scrape_and_upload(app)
+        apk_path = scrape_app(app)
         if not apk_path:
             results.append({"name": app["name"], "status": "FAILED", "url": ""})
+            time.sleep(3)
             continue
 
-        # Delete old asset with same name if exists
-        if apk_path.name in existing_assets:
-            print(f"  [~] Replacing existing asset {apk_path.name}")
-            delete_asset(existing_assets[apk_path.name])
+        # Replace old asset if exists
+        if apk_path.name in existing:
+            print(f"  [~] Deleting old asset: {apk_path.name}")
+            delete_asset(existing[apk_path.name])
 
         dl_url = upload_asset(upload_url, apk_path)
         results.append({
@@ -262,22 +416,20 @@ def main():
             "url": dl_url
         })
 
-        # Clean up local file after upload
         apk_path.unlink(missing_ok=True)
-        time.sleep(2)  # be polite to APKMirror
+        time.sleep(3)  # polite delay between apps
 
-    # Write results summary
     with open("scrape_results.json", "w") as f:
         json.dump(results, f, indent=2)
 
-    print("\n=== Scrape Summary ===")
-    ok = sum(1 for r in results if r["status"] == "OK")
+    print("\n=== Summary ===")
+    ok = [r for r in results if r["status"] == "OK"]
     failed = [r["name"] for r in results if r["status"] != "OK"]
-    print(f"Success: {ok}/{len(results)}")
+    print(f"OK: {len(ok)}/{len(results)}")
     if failed:
-        print(f"Failed: {', '.join(failed)}")
+        print(f"FAILED: {', '.join(failed)}")
         sys.exit(1)
-    print("All APKs scraped and uploaded successfully!")
+    print("Done!")
 
 
 if __name__ == "__main__":
