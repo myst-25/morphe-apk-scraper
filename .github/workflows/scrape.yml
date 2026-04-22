@@ -1,0 +1,46 @@
+name: Scrape APKs
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:      # Manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions: write-all
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run scraper
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python scraper.py
+
+      - name: Upload scrape results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape-results
+          path: scrape_results.json
+          retention-days: 7
+
+      - name: Trigger Morphed-apps build
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.MORPHE_PAT }}
+        run: |
+          gh workflow run build.yml \
+            --repo myst-25/Morphed-apps \
+            --ref main
